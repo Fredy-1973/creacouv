@@ -74,11 +74,9 @@ with tabs[0]:
 
         # --- EXPORTS ---
         st.write("### 📂 Générer les gabarits")
-        m = 2.834645 # Points par mm
+        m = 2.834645 
         
-        # Première ligne de boutons
         e1, e2, e3 = st.columns(3)
-        
         # InDesign
         indy = (f'var d=app.documents.add(); d.documentPreferences.pageHeight="{hauteur_f}mm"; d.documentPreferences.pageWidth="{lt}mm"; '
                 f'd.documentPreferences.documentBleedTopOffset="5mm"; d.documentPreferences.documentBleedUniformSize=true; '
@@ -103,9 +101,7 @@ with tabs[0]:
                 f'dr(5, "h"); dr({hauteur_f}+5, "h");')
         e3.download_button("Illustrator (.jsx)", illu, file_name="creacouv_illustrator.jsx")
 
-        # Deuxième ligne de boutons
         e4, e5, e6 = st.columns(3)
-
         # Word (VBS)
         word = (f'Set w=CreateObject("Word.Application"): w.Visible=True: Set d=w.Documents.Add: With d.PageSetup: .PageWidth={(lt+10)*2.8346}: .PageHeight={(hauteur_f+10)*2.8346}: .TopMargin=0: .BottomMargin=0: .LeftMargin=0: .RightMargin=0: End With: '
                 f'Sub LV(x): d.Shapes.AddLine x*2.8346, 0, x*2.8346, {(hauteur_f+10)*2.8346}: End Sub: '
@@ -120,7 +116,7 @@ with tabs[0]:
                    f'scribus.setHGuides([5, {hauteur_f+5}])')
         e5.download_button("Scribus (.py)", scribus, file_name="creacouv_scribus.py")
 
-        # PNG / Canva
+        # Canva / PNG
         px = 11.811
         w_px, h_px = int((lt+10)*px), int((hauteur_f+10)*px)
         img = Image.new("RGBA", (w_px, h_px), (255,255,255,255))
@@ -138,7 +134,7 @@ with tabs[0]:
 # --- TAB 2 : PRODUCTION ---
 with tabs[1]:
     st.subheader("Production Pages")
-    raw_prod = st.text_area("Saisir les pages couleur :", height=100)
+    raw_prod = st.text_area("Saisir la liste des pages couleur physiques :", height=100)
     if st.button("Calculer binômes"):
         clean = re.sub(r'[^0-9]+', ',', raw_prod).strip(',')
         if clean:
@@ -152,7 +148,7 @@ with tabs[1]:
 # --- TAB 3 : EAN ---
 with tabs[2]:
     st.subheader("Code-barres EAN-13")
-    isbn_in = st.text_input("Saisir les 12 premiers chiffres :", max_chars=12)
+    isbn_in = st.text_input("Saisir les 12 premiers chiffres de l'ISBN :", max_chars=12)
     if len(isbn_in) == 12:
         s = sum(int(x) * (1 if i % 2 == 0 else 3) for i, x in enumerate(isbn_in))
         full = isbn_in + str((10 - (s % 10)) % 10)
@@ -161,15 +157,51 @@ with tabs[2]:
         l_part = "".join([chr(65 + int(full[i])) if p[i-1] == 'A' else chr(75 + int(full[i])) for i in range(1, 7)])
         r_part = "".join([chr(97 + int(full[i])) for i in range(7, 13)])
         pao = f"{f}{l_part}*{r_part}+"
-        st.success(f"Code : {full}")
+        st.success(f"Code complet : {full}")
         st.info(f"Chaîne PAO : {pao}")
-        st.caption("Appliquez la police 'Code EAN13' dans votre logiciel.")
+        st.caption("Appliquez la police 'Code EAN13' (Corps 30) dans votre logiciel.")
 
-# --- TAB 4 : AIDE ---
+# --- TAB 4 : AIDE COMPLÈTE ---
 with tabs[3]:
-    st.markdown(f"""### Notice d'utilisation V11.3
-**1. Rabats :** Doivent être entre 60 et 120 mm ou laissés à 0.
-**2. Poids :** Estimation incluant 50g de couverture.
-**3. Scripts :** Téléchargez et exécutez dans vos logiciels Adobe ou Scribus.
+    help_text = """1. CALCULATEUR DE DOS ET FORMATS
+------------------------------
+- Dos : Calculé selon le coefficient papier.
+- Format Net : Sans fonds perdus.
+- Format avec fond perdu : Format total.
 
-Support technique : **Frédéric Barbier** Contact : fred.barbier-icn@outlook.fr""")
+UTILISATION DES SCRIPTS :
+- InDesign (.jsx) :
+  1.'Fenêtre' > 'Utilitaires' > 'Scripts' > 'Utilisateur'.
+  2.Panneau 'Scripts' > Clic droit dossier 'Utilisateur' > 'Faire apparaître dans l'explorateur'.
+  3.Glissez le fichier dans le dossier 'Scripts Panel'.
+  4.Dans InDesign, fenêtre scripts, double-cliquez sur le script que vous avez créé.
+  
+- Photoshop (.jsx) :
+  Dans le logiciel : 'Fichier' > 'Scripts' > 'Parcourir'.
+
+- Illustrator (.jsx) :
+  Dans le logiciel : 'Fichier' > 'Scripts' > 'Autre script'.
+  Une fois votre maquette créée, allez dans 'Edition', 'Préférences', 'Unités' et sélectionnez 'mm'.
+
+- Word (.vbs) :
+  Double-cliquez sur le fichier .vbs. Crée une page au format total avec des lignes de repères pour la coupe et les plis.
+
+- Scribus (.py) :
+  'Scripts' > 'Démarrer un script'. Crée le document et ajoute les guides verticaux/horizontaux automatiquement.
+
+- Canva / Affinity (.png) :
+  Génère une image à 300dpi avec zones de couleurs (Dos et Fond perdu), à placer en fond pour créer votre couverture.
+
+2. PRODUCTION PAGES
+-------------------
+Saisir la liste des pages couleur physiques, cliquer sur "Calculer binômes" puis sur "Exporter Rapport .txt" et fournir ce fichier texte à votre imprimeur.
+
+3. CODE-BARRES
+--------------
+Saisir les 12 premiers chiffres de votre N° ISBN (le dernier chiffre est calculé automatiquement).
+Copiez la chaîne, collez-la dans votre logiciel de PAO et appliquez la police "Code EAN13" (Corps 30).
+
+Support technique : Frédéric Barbier
+Contact : fred.barbier-icn@outlook.fr"""
+    
+    st.text_area("Notice d'utilisation détaillée", help_text, height=600)
