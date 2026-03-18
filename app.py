@@ -4,9 +4,10 @@ import re
 from PIL import Image, ImageDraw
 import io
 
-# --- CONFIGURATION ---
+# --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(page_title="CréaCouv V11.3 PRO", page_icon="🎨")
 
+# --- DONNÉES PAPIERS ---
 PAPIERS_DATA = {
     "Bouffant 80g": {"main": 0.07, "gr": 80},
     "Bouffant 1.5 80g": {"main": 0.061, "gr": 80},
@@ -73,9 +74,11 @@ with tabs[0]:
 
         # --- EXPORTS ---
         st.write("### 📂 Générer les gabarits")
-        m = 2.834645
+        m = 2.834645 # Points par mm
         
+        # Première ligne de boutons
         e1, e2, e3 = st.columns(3)
+        
         # InDesign
         indy = (f'var d=app.documents.add(); d.documentPreferences.pageHeight="{hauteur_f}mm"; d.documentPreferences.pageWidth="{lt}mm"; '
                 f'd.documentPreferences.documentBleedTopOffset="5mm"; d.documentPreferences.documentBleedUniformSize=true; '
@@ -84,14 +87,38 @@ with tabs[0]:
                 f'p.guides.add(undefined, {{orientation:HorizontalOrVertical.vertical, location:"{rabat_val+largeur_f}mm"}}); '
                 f'p.guides.add(undefined, {{orientation:HorizontalOrVertical.vertical, location:"{rabat_val+largeur_f+dos}mm"}}); '
                 f'p.guides.add(undefined, {{orientation:HorizontalOrVertical.vertical, location:"{rabat_val+2*largeur_f+dos}mm"}});')
-        e1.download_button("InDesign (.jsx)", indy, file_name="creacouv_v11.jsx")
+        e1.download_button("InDesign (.jsx)", indy, file_name="creacouv_indesign.jsx")
 
         # Photoshop
         ps = (f'app.preferences.rulerUnits = Units.MM; var doc = app.documents.add({lt}+10, {hauteur_f}+10, 300, "Couv", NewDocumentMode.CMYK); '
               f'function g(p, o){{ doc.guides.add(o, p); }} g(5, Direction.HORIZONTAL); g({hauteur_f}+5, Direction.HORIZONTAL); '
               f'g(5, Direction.VERTICAL); g({lt}+5, Direction.VERTICAL); g({rabat_val}+5, Direction.VERTICAL); '
               f'g({rabat_val+largeur_f}+5, Direction.VERTICAL); g({rabat_val+largeur_f+dos}+5, Direction.VERTICAL); g({rabat_val+2*largeur_f+dos}+5, Direction.VERTICAL);')
-        e2.download_button("Photoshop (.jsx)", ps, file_name="creacouv_v11.jsx")
+        e2.download_button("Photoshop (.jsx)", ps, file_name="creacouv_photoshop.jsx")
+
+        # Illustrator
+        illu = (f'var w=({lt}+10)*{m}; var h=({hauteur_f}+10)*{m}; var doc = app.documents.add(DocumentColorSpace.CMYK, w, h); '
+                f'function dr(x, o){{ var p=doc.pathItems.add(); if(o=="v"){{p.setEntirePath([[x*{m},0],[x*{m},h]]);}}else{{p.setEntirePath([[0,x*{m}],[w,x*{m}]]);}} p.guides=true; }} '
+                f'dr(5, "v"); dr({rabat_val+5}, "v"); dr({rabat_val+largeur_f+5}, "v"); dr({rabat_val+largeur_f+dos+5}, "v"); dr({rabat_val+2*largeur_f+dos+5}, "v"); dr({lt}+5, "v"); '
+                f'dr(5, "h"); dr({hauteur_f}+5, "h");')
+        e3.download_button("Illustrator (.jsx)", illu, file_name="creacouv_illustrator.jsx")
+
+        # Deuxième ligne de boutons
+        e4, e5, e6 = st.columns(3)
+
+        # Word (VBS)
+        word = (f'Set w=CreateObject("Word.Application"): w.Visible=True: Set d=w.Documents.Add: With d.PageSetup: .PageWidth={(lt+10)*2.8346}: .PageHeight={(hauteur_f+10)*2.8346}: .TopMargin=0: .BottomMargin=0: .LeftMargin=0: .RightMargin=0: End With: '
+                f'Sub LV(x): d.Shapes.AddLine x*2.8346, 0, x*2.8346, {(hauteur_f+10)*2.8346}: End Sub: '
+                f'Sub LH(y): d.Shapes.AddLine 0, y*2.8346, {(lt+10)*2.8346}, y*2.8346: End Sub: '
+                f'LV 5: LV {rabat_val+5}: LV {rabat_val+largeur_f+5}: LV {rabat_val+largeur_f+dos+5}: LV {rabat_val+2*largeur_f+dos+5}: LV {lt+5}: '
+                f'LH 5: LH {hauteur_f+5}')
+        e4.download_button("Word (.vbs)", word, file_name="creacouv_word.vbs")
+
+        # Scribus
+        scribus = (f'import scribus\nscribus.newDocument(({lt+10}, {hauteur_f+10}), (0,0,0,0), 0, 1, 1, 0, 0, 1)\n'
+                   f'scribus.setVGuides([5, {rabat_val+5}, {rabat_val+largeur_f+5}, {rabat_val+largeur_f+dos+5}, {rabat_val+2*largeur_f+dos+5}, {lt+5}])\n'
+                   f'scribus.setHGuides([5, {hauteur_f+5}])')
+        e5.download_button("Scribus (.py)", scribus, file_name="creacouv_scribus.py")
 
         # PNG / Canva
         px = 11.811
@@ -106,7 +133,7 @@ with tabs[0]:
         draw.rectangle([int((5+rabat_val+largeur_f)*px),0,int((5+rabat_val+largeur_f+dos)*px),h_px], fill=(255,150,150,100))
         buf = io.BytesIO()
         img.save(buf, format="PNG")
-        e3.download_button("Canva/PNG", buf.getvalue(), file_name="gabarit_v11.png")
+        e6.download_button("Canva/PNG", buf.getvalue(), file_name="gabarit_v11.png")
 
 # --- TAB 2 : PRODUCTION ---
 with tabs[1]:
@@ -140,8 +167,9 @@ with tabs[2]:
 
 # --- TAB 4 : AIDE ---
 with tabs[3]:
-    st.markdown("""### Notice d'utilisation V11.3
+    st.markdown(f"""### Notice d'utilisation V11.3
 **1. Rabats :** Doivent être entre 60 et 120 mm ou laissés à 0.
 **2. Poids :** Estimation incluant 50g de couverture.
 **3. Scripts :** Téléchargez et exécutez dans vos logiciels Adobe ou Scribus.
-**Support :** Frédéric Barbier (fred.barbier-icn@outlook.fr)""")
+
+Support technique : **Frédéric Barbier** Contact : fred.barbier-icn@outlook.fr""")
