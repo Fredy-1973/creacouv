@@ -186,6 +186,7 @@ with tabs[1]:
 with tabs[2]:
     st.subheader("Code-barres EAN-13")
     isbn_in = st.text_input("Saisir les 12 premiers chiffres :", max_chars=12)
+    
     if len(isbn_in) == 12:
         s = sum(int(x) * (1 if i % 2 == 0 else 3) for i, x in enumerate(isbn_in))
         full = isbn_in + str((10 - (s % 10)) % 10)
@@ -200,6 +201,20 @@ with tabs[2]:
         st.success(f"Code complet : {full}")
         st.info(f"Chaîne PAO : {pao_final}")
         st.caption("Appliquez la police 'Code EAN13' dans votre logiciel.")
+
+        # --- AJOUT DU BOUTON DE TÉLÉCHARGEMENT ---
+        st.markdown("---")
+        try:
+            with open("EAN13.ttf", "rb") as file:
+                st.download_button(
+                    label="📥 Télécharger la police EAN13",
+                    data=file,
+                    file_name="EAN13.ttf",
+                    mime="font/ttf"
+                )
+            st.write("💡 **Instruction :** Une fois téléchargé, faites un clic droit sur le fichier et choisissez **'Installer'** pour pouvoir l'utiliser dans votre logiciel de mise en page.")
+        except FileNotFoundError:
+            st.warning("Note : Le fichier de police EAN13.ttf n'a pas été trouvé sur le serveur.")
 
 # --- TAB 4 : AIDE ---
 with tabs[3]:
